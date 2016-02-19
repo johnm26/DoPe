@@ -1,5 +1,5 @@
 # DoPe
-Python code for AMATH 402 Double Pendulum analysis.
+Python code for AMATH 402 _Do_uble _Pe_ndulum analysis.
 
 # File Summary
 - solve.py : The main numerical equation solver used by the code.
