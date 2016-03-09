@@ -47,7 +47,26 @@ def testRungeKutta():
     pylab.plot(t, exact, label = "Analytic")
     pylab.legend(loc = "lower left")
 
+def testMultipleX0():
+    f = lambda x : x[1]
+    g = lambda x : -x[0]
+    x0 = np.array([[0.0, 1.0], [1.0, 0.0]])
+    s = RungeKuttaSolver([f, g], x0)
+    soln = np.zeros((2, N))
+    t = np.arange(N) * DT
+    
+    for i in range(N):
+        soln[:, i] = s.vars()[:, 0]
+        s.step(DT)
+    
+    pylab.figure()
+    pylab.title(r"Runge-Kutta Integration Test: $\Delta t = %s$" % DT)
+    pylab.plot(t, soln[0], label = r"Numerical $sin(t)$")
+    pylab.plot(t, soln[1], label = r"Numerical $cos(t)$")
+    pylab.legend(loc = "lower left")
+
 if __name__ == "__main__":
-    testEuler()
-    testRungeKutta()
+    # testEuler()
+    # testRungeKutta()
+    testMultipleX0()
     pylab.show()

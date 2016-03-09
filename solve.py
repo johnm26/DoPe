@@ -54,9 +54,9 @@ class Solver(object):
     # Return current derivative values
     def derivs(self, x = None):
         if x == None:
-            return np.array([fcn(self.x) for fcn in self.f])
+            return np.transpose(np.array([fcn(self.x) for fcn in self.f]))
         else:
-            return np.array([fcn(x) for fcn in self.f])
+            return np.transpose(np.array([fcn(x) for fcn in self.f]))
     
     # Return the current solution time
     def now(self):
