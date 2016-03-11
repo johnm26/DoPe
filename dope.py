@@ -389,17 +389,23 @@ def initEnsemble(dt, dp, t0, p0, N):
     th, ph = np.meshgrid(th, ph)
     return th.ravel(), ph.ravel()
 
-def plotPendulumOnTorus():
+def plotPendulumOnTorus(animate = True, nsteps = p.n):
     # Plot the pendulum and torus side by side.
     fig = pylab.figure()
-    ax1 = pylab.subplot2grid((2, 4), (0, 0), rowspan = 2, colspan = 2)
+    if animate:
+        ax1 = pylab.subplot2grid((2, 4), (0, 0), rowspan = 2, colspan = 2)
+        ax2 = pylab.subplot2grid((2, 4), (0, 2), rowspan = 2, colspan = 2, projection = "3d")
+    else:
+        ax1 = fig.gca()
+        fig2 = pylab.figure()
+        ax2 = fig2.gca(projection = "3d")
+        
     pendSetup(ax1)
     line1, = ax1.plot([], [], 'k', linestyle = '-', marker = 'o', \
         markeredgecolor = 'k', markerfacecolor = (0.5, 0.5, 1.0), markersize = 10)
     line1.set_markevery((1, 1))
     line1b, = ax1.plot([], [], 'm--', animated = True)
     
-    ax2 = pylab.subplot2grid((2, 4), (0, 2), rowspan = 2, colspan = 2, projection = "3d")
     torus3d(ax2, elev = 30.0, azim = 30.0)
     line2, = ax2.plot([], [], [], 'k-')
     
@@ -408,27 +414,28 @@ def plotPendulumOnTorus():
     torAnimator = TorAnimate(line2)
     torRotator = TorusViewChanger(ax2)
     simulation = DopeSimulation([pendAnimator, torAnimator, \
-        pendulumTrackAnimator, torRotator])
+        pendulumTrackAnimator, torRotator], nsteps = nsteps)
     
-    for i in range(p.n):
-        simulation(i)
-    
-    pylab.suptitle("Runge-Kutta Pendulum Simulation", fontsize = 20)
-    pylab.tight_layout(3.0)
-    ax1.set_axis_off()
-    pylab.savefig("OnePendWithTorus.png")
-    
-    ax1.set_axis_on()
-    simulation.reset()
-    anim = animation.FuncAnimation(fig, simulation, \
-        blit = True, init_func = simulation.reset, \
-        interval = 10, repeat = True)
-    
-    pylab.show()
+    if animate:
+        ax1.set_axis_on()
+        simulation.reset()
+        anim = animation.FuncAnimation(fig, simulation, \
+            blit = True, init_func = simulation.reset, \
+            interval = 10, repeat = True)
+        
+        pylab.suptitle("Runge-Kutta Pendulum Simulation", fontsize = 20)
+        pylab.tight_layout(3.0)
+        pylab.show()
+    else:
+        for i in range(nsteps):
+            simulation(i)
+        
+        ax1.set_axis_off()
+        fig.savefig("OnePendulumEvolution.png")
+        fig2.savefig("OnePendulumOnTorus.png")
 
-def plotPendulumEnsemble():
-    # Plot multiple pendulum initial conditions on the torus.
-    saveEvery = 100
+# Plot multiple pendulum initial conditions on the torus.
+def plotPendulumEnsemble(animate = True, saveEvery = 100, nsteps = p.n):
     fig = pylab.figure()
     ax = pylab.gca(projection = "3d")
     torus3d(ax, elev = 30.0, azim = 0.0)
@@ -437,23 +444,32 @@ def plotPendulumEnsemble():
     td0 = p.blobtd0 * np.ones(t0.shape)
     pd0 = p.blobpd0 * np.ones(p0.shape)
     initialState = np.transpose(np.vstack( (t0, p0, td0, pd0) ))
-    simulation = DopeSimulation([EnsembleAnimate(line)], x0 = initialState)
-    anim = animation.FuncAnimation(fig, simulation, blit = True, \
-          interval = 10, repeat = True)
+    simulation = DopeSimulation([EnsembleAnimate(line)], x0 = initialState, \
+        nsteps = nsteps)
     
-    simulation.reset()
-    for i in range(p.n):
-        simulation(i)
-        if i % saveEvery == 0:
-            pylab.savefig("ensembleOnTorus_step%s.png" % str(i).zfill(4))
-            
-    pylab.show()
+    if animate:
+        anim = animation.FuncAnimation(fig, simulation, blit = True, \
+              interval = 10, repeat = True)
+        
+        pylab.show()
+    else:
+        ax.set_title("")
+        for i in range(nsteps):
+            simulation(i)
+            if i % saveEvery == 1:
+                pylab.savefig("ensembleOnTorus_step%s.png" % str(i).zfill(4))
     
-def plotLyapunovDivergence():
-    lyapSteps = 200
+def plotLyapunovDivergence(animate = True, lyapSteps = 200, \
+    t0 = np.pi, p0 = 1 * np.pi / 180.0, td0 = 0.0, pd0 = 0.0):
+    
     fig = pylab.figure()
-    ax1 = pylab.subplot2grid((1, 2), (0, 1), aspect = 1.0) # Pendula
-    ax2 = pylab.subplot2grid((1, 2), (0, 0)) # System difference
+    if animate:
+        ax1 = pylab.subplot2grid((1, 2), (0, 1), aspect = 1.0) # Pendula
+        ax2 = pylab.subplot2grid((1, 2), (0, 0)) # System difference
+    else:
+        ax1 = fig.gca(aspect = 1.0)
+        fig2 = pylab.figure()
+        ax2 = fig2.gca()
     
     pendSetup(ax1, titleHigh = True)
     ax1.set_axis_on()
@@ -469,7 +485,7 @@ def plotLyapunovDivergence():
     ax2.set_xlim((0, lyapSteps * p.dt))
     ax2.set_ylim((-6, 3))
     ax2.set_xlabel(r"simulation time $\tau$", fontsize = 14)
-    ax2.set_ylabel(r"phase space distance $\delta(t)$", fontsize = 14)
+    ax2.set_ylabel(r"phase space distance $\log(\delta(t))$", fontsize = 14)
     
     pendAnimator1 = PendulumAnimate(line1, pendNumber = 0)
     pendAnimator2 = PendulumAnimate(line2, pendNumber = 1)
@@ -483,11 +499,13 @@ def plotLyapunovDivergence():
         pendulumTrackAnimator1, pendulumTrackAnimator2, phaseDiffAnimator], \
         x0 = initial, nsteps = lyapSteps)
     
-    anim = animation.FuncAnimation(fig, simulation, \
-        blit = True, init_func = simulation.reset, \
-        interval = 10, repeat = True)
-    
-    simulation.reset()
+    if animate:
+        anim = animation.FuncAnimation(fig, simulation, \
+            blit = True, init_func = simulation.reset, \
+            interval = 10, repeat = True)
+        
+        simulation.reset()
+        
     for i in range(lyapSteps):
         simulation(i)
         
@@ -497,14 +515,28 @@ def plotLyapunovDivergence():
     pylab.legend(loc = 'lower right')
     pylab.tight_layout()
     
-    pylab.savefig("2PendulumLyapunov.png")
-    
-    pylab.show()
+    if animate:
+        pylab.savefig("2PendulumLyapunov.png")
+        pylab.show()
+    else:
+        fig.savefig("pendula_2PendulumLyapunov.png")
+        fig2.savefig("phasediff_2PendulumLyapunov.png")
 
-def plotPendulumWithThetaAndPhi():
+def plotPendulumWithThetaAndPhi(animate = True, \
+    title = "PendulumNormalModes.png", t0 = p.t0, p0 = p.p0, nsteps = 120, massRat = rm):
+    
+    global rm
+    old = rm
+    rm = massRat
+    
     fig = pylab.figure()
-    ax1 = pylab.subplot2grid((1, 2), (0, 1), aspect = 1.0) # Pendulum
-    ax2 = pylab.subplot2grid((1, 2), (0, 0)) # Theta/Phi plots
+    if animate:
+        ax1 = pylab.subplot2grid((1, 2), (0, 1), aspect = 1.0) # Pendulum
+        ax2 = pylab.subplot2grid((1, 2), (0, 0)) # Theta/Phi plots
+    else:
+        ax1 = fig.gca(aspect = 1.0)
+        fig2 = pylab.figure()
+        ax2 = fig2.gca()
     
     pendSetup(ax1, titleHigh = True)
     ax1.set_axis_on()
@@ -514,7 +546,7 @@ def plotPendulumWithThetaAndPhi():
     
     line2, = ax2.plot([], [], 'b-', label = r"$\theta$")
     line3, = ax2.plot([], [], 'r-', label = r"$\phi$")
-    ax2.set_xlim((0, p.n * p.dt))
+    ax2.set_xlim((0, nsteps * p.dt))
     ax2.set_ylim((-30 * np.pi / 180.0, 30 * np.pi / 180))
     ax2.set_xlabel(r"simulation time $\tau$", fontsize = 14)
     ax2.set_ylabel("pendula angles", fontsize = 14)
@@ -522,25 +554,56 @@ def plotPendulumWithThetaAndPhi():
     pendAnimator1 = PendulumAnimate(line1)
     angleAnimator = AngleAnimator(line2, line3)
     
-    simulation = DopeSimulation([pendAnimator1, angleAnimator])
+    simulation = DopeSimulation([pendAnimator1, angleAnimator], \
+        x0 = np.array([t0, p0, 0.0, 0.0]), nsteps = nsteps)
     
-    anim = animation.FuncAnimation(fig, simulation, \
-        blit = True, init_func = simulation.reset, \
-        interval = 10, repeat = True)
+    if animate:
+        anim = animation.FuncAnimation(fig, simulation, \
+            blit = True, init_func = simulation.reset, \
+            interval = 10, repeat = True)
+        
+        simulation.reset()
     
-    simulation.reset()
-    for i in range(p.n):
+    for i in range(nsteps):
         simulation(i)
         
     pylab.legend(loc = 'lower right')
     pylab.tight_layout()
     
-    pylab.savefig("PendulumNormalModes.png")
+    if animate:
+        pylab.show()
+    else:
+        fig.savefig("pendulum_" + title)
+        fig2.savefig("angles_" + title)
     
-    pylab.show()
+    rm = old
 
 if __name__ == "__main__":
-    plotPendulumOnTorus()
-    # plotPendulumWithThetaAndPhi()
-    # plotLyapunovDivergence()
-    # plotPendulumEnsemble()
+    # These function calls generate the plots in our report.
+    
+    plotPendulumOnTorus(animate = False, nsteps = 200)
+    inPhaseT0 = 10 * np.pi / 180.0
+    inPhaseP0 = np.sqrt(2) * inPhaseT0
+    outPhaseT0 = inPhaseT0
+    outPhaseP0 = -np.sqrt(2) * outPhaseT0
+    plotPendulumWithThetaAndPhi(animate = False, title = "InPhaseMode.png", \
+        t0 = inPhaseT0, p0 = inPhaseP0, nsteps = 125)
+    plotPendulumWithThetaAndPhi(animate = False, title = "OutPhaseMode.png", \
+        t0 = outPhaseT0, p0 = outPhaseP0, nsteps = 91)
+    plotPendulumWithThetaAndPhi(animate = False, title = "m2Zero.png", \
+        t0 = inPhaseT0, p0 = inPhaseP0, nsteps = 90, massRat = 0.0)
+    plotLyapunovDivergence(animate = False)
+    plotPendulumEnsemble(animate = False, nsteps = 500)
+    
+    # Uncomment one at a time to view the animations shown during our
+    # 03/09/2016 presentation.
+    pylab.close("all")
+    plotPendulumOnTorus(animate = True, nsteps = 200)
+    # plotPendulumWithThetaAndPhi(animate = True, title = "InPhaseMode.png", \
+    #    t0 = inPhaseT0, p0 = inPhaseP0, nsteps = 125)
+    # plotPendulumWithThetaAndPhi(animate = True, title = "OutPhaseMode.png", \
+    #    t0 = outPhaseT0, p0 = outPhaseP0, nsteps = 91)
+    # plotPendulumWithThetaAndPhi(animate = True, title = "m2Zero.png", \
+    #    t0 = inPhaseT0, p0 = inPhaseP0, nsteps = 90, massRat = 0.0)
+    # plotLyapunovDivergence(animate = True)
+    # plotPendulumEnsemble(animate = True, nsteps = 500)

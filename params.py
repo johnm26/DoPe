@@ -15,26 +15,9 @@ p0 = 1 * pi/ 180.0
 td0 = 0.0
 pd0 = 0.0
 
-"""
-t0 = 0.0
-p0 = pi / 2
-td0 = 0.0
-pd0 = 0.0
-"""
-"""
-# Superimpose two normal modes.
-t0 = 10 * pi / 180.0
-p0 = sqrt(2.0) * (t0 - 0.4 * t0)
-td0 = 0.0
-pd0 = 0.0
-"""
-"""
-# Normal mode initial conditions
-t0 = 10 * pi / 180.0
-p0 = -sqrt(2.0) * t0
-td0 = 0.0
-pd0 = 0.0
-"""
+#####################
+# ENSEMBLE PARAMETERS
+#####################
 # Size of blob of initial conditions in theta/phi space.
 # blobt0/blobp0 is the center of the blob in the theta/phi plane.
 # blobdt/blobdp are side-lengths of the blob in theta/phi.
@@ -52,6 +35,6 @@ blobnp = 5
 ###############################
 # SOLUTION ALGORITHM PARAMETERS
 ###############################
-# Timestep.
+# Timestep and number of steps to take.
 dt = 0.1
 n  = 500
